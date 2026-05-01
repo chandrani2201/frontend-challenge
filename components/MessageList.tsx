@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Message } from '../services/chatService';
 import ChatBubble from './ChatBubble';
 
@@ -13,6 +13,14 @@ export default function MessageList({ messages, currentUser }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [userScrolling, setUserScrolling] = useState(false);
+
+  const sortedMessages = useMemo(() => {
+    return messages.map((msg) => ({
+      ...msg,
+      message: msg.message
+        .replace(/&#39;/g, "'"),
+    }));
+  }, [messages]);
 
   const handleScroll = () => {
     const el = containerRef.current;
@@ -27,9 +35,10 @@ export default function MessageList({ messages, currentUser }: Props) {
     }
   }, [messages, userScrolling]);
 
+  
   return (
     <div ref={containerRef} onScroll={handleScroll} className="chat-messages">
-      {messages.map((msg) => (
+      {sortedMessages.map((msg) => (
         <ChatBubble
           key={msg._id}
           message={msg}
