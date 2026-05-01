@@ -1,24 +1,29 @@
 'use client';
 
+import './chat.css';
 import { useEffect, useState } from 'react';
 import { Message, getMessages, sendMessage } from '../services/chatService';
 import MessageList from '../components/MessageList';
 import MessageInput from '../components/MessageInput';
 import { POLL_INTERVAL, CURRENT_USER } from '../services/constants';
-import './chat.css';
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const fetchMessages = async () => {
-  try {
-    const data = await getMessages();
-    setMessages(data); // remove the reverse!
-  } catch (error) {
-    console.error('Failed to fetch messages:', error);
-  }
-};
+    try {
+      const data = await getMessages();
+      setMessages(data);
+      setError('');
+    } catch (err) {
+      setError('Failed to load messages. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchMessages();
@@ -31,8 +36,8 @@ export default function Home() {
     try {
       await sendMessage(message, CURRENT_USER);
       await fetchMessages();
-    } catch (error) {
-      console.error('Failed to send message:', error);
+    } catch (err) {
+      setError('Failed to send message. Please try again.');
     } finally {
       setIsSending(false);
     }
@@ -40,7 +45,20 @@ export default function Home() {
 
   return (
     <div className="chat-container">
-      <MessageList messages={messages} currentUser={CURRENT_USER} />
+      {loading ? (
+        <div className="chat-loading">
+          <p>Loading messages...</p>
+        </div>
+      ) : error ? (
+        <div className="chat-error">
+          <p>{error}</p>
+          <button onClick={fetchMessages} className="chat-retry-button">
+            Retry
+          </button>
+        </div>
+      ) : (
+        <MessageList messages={messages} currentUser={CURRENT_USER} />
+      )}
       <MessageInput onSend={handleSend} isSending={isSending} />
     </div>
   );
